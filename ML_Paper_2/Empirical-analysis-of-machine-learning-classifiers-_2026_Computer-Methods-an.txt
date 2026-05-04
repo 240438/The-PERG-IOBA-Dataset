@@ -1,0 +1,1571 @@
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Contents lists available at ScienceDirect
+
+Computer Methods and Programs in Biomedicine Update
+journal homepage: www.sciencedirect.com/journal/computer-methodsand-programs-in-biomedicine-update
+
+Empirical analysis of machine learning classifiers for retinal and optic nerve
+disorder detection using band-limited PERG features
+Sathees Kumar Nataraj *
+Department of Mechatronics Engineering, University of Technology Bahrain, Salmabad, Bahrain
+
+A R T I C L E I N F O
+
+A B S T R A C T
+
+Keywords:
+Pattern electroretinogram (PERG)
+Time-domain features
+Frequency band analysis
+Multiclass classification
+AdaBoost
+Machine learning
+
+Pattern Electroretinogram (PERG) signals offer critical insights into the functional status of retinal ganglion cells
+and are widely used for diagnosing optic nerve and retinal pathologies. While existing research has largely
+focused on binary classification or full-spectrum signal analysis, limited studies have addressed the use of fre­
+quency band-based feature extraction in multiclass classification. This study presents a novel methodology that
+segments PERG signals into defined frequency bands and extracts a robust set of 33 time-domain features per eye,
+encompassing statistical, morphological, and temporal characteristics. The dataset, originally comprising 15
+diagnostic classes were consolidated into five clinically relevant pathology categories to enhance class balance
+and interpretability. Feature relevance was validated through one-way ANOVA, identifying key discriminative
+features (e.g., slope, std) with high F-values and p< 0.001. Several machine learning models were developed and
+evaluated, including Multilayer Neural Networks using the Levenberg–Marquardt algorithm (MLNN-LM),
+Random Forest, Bagged Trees, RUSBoost, and AdaBoost implemented via an Error-Correcting Output Codes
+(ECOC) framework. Among these, the AdaBoost-ECOC model demonstrated superior performance with an
+average classification accuracy of 99.11% ± 1.26, precision of 82.92% ± 0.59, and F1-score of 83.03% ± 0.55.
+These findings highlight the clinical applicability of band-specific time-domain features, supported by statistical
+validation, in enabling accurate and efficient multiclass classification of PERG signals.
+
+1. Introduction
+Early detection of eye disorders is critical, yet clinical evaluation can
+be time-consuming and may delay diagnosis until symptoms become
+severe [1]. With the increasing availability of non-invasive diagnostics
+techniques, there is a strong interest in using artificial intelligence (AI)
+to support automated and objective eye disease detection [2]. Among
+these technologies, ocular electrophysiology offers a direct and quanti­
+tative assessment of retinal function by measuring electrical responses
+elicited by visual stimuli [3]. Core techniques like flash electroretinog­
+raphy (ERG) and visual evoked potentials (VEP) have long been used in
+clinical diagnosis. Flash ERG captures photoreceptor (a-wave) and bi­
+polar cell (b-wave) activity using full-field stimuli, while VEP assesses
+
+cortical responses and is useful for evaluating optic nerve integrity
+[4–8]. Although structural diagnostic tools such as optical coherence
+tomography (OCT) and visual field analysis are widely used, they often
+detect disease at later stages. In contrast, electrophysiological methods
+such as multifocal ERG (mfERG) and multifocal VEP can reveal func­
+tional impairments earlier in disease progression [9].
+In ophthalmic applications, electroretinography (ERG) and its
+variant, pattern electroretinography (PERG), use corneal or skin elec­
+trodes to capture retinal responses to visual stimuli [10]. Pattern elec­
+troretinography (PERG) is particularly sensitive to early dysfunction of
+retinal ganglion cells (RGCs), making it clinically valuable in conditions
+such as glaucoma [11]. PERG employs contrast-reversing checkerboard
+stimuli focused on the macular region, producing characteristic P50 and
+
+Abbreviations: AdaBoost, Adaptive Boosting; AI, Artificial Intelligence; AUC, Area Under the Curve; ECOC, Error-Correcting Output Codes; Electrocardiographic,
+(ECG); Electroencephalographic, (EEG); Empirical Wavelet Transform, (EWT); FFT, Fast Fourier Transform; FN, False Negative; FP, False Positive; Hz, Hertz; IOBA,
+Instituto Universitario de Oftalmobiología Aplicada; LM, Levenberg–Marquardt (training algorithm); MAV, Mean Absolute Value; ML, Machine Learning; MLNN,
+Multi Layer Neural Network; PERG, Pattern Electroretinogram; RF, Random Forest; RGC, Retinal ganglion cell; RMS, Root Mean Square; RUSBoost, Random Under
+Sampling Boosting; TN, True Negative; TP, True Positive.
+* Corresponding author at: Department of Mechatronics Engineering, University of Technology Bahrain, Building 829, Road 1213, Block 712, Salmabad, P.O. Box
+18041, Kingdom of Bahrain.
+E-mail address: sknataraj@utb.edu.bh.
+https://doi.org/10.1016/j.cmpbup.2026.100236
+Available online 9 February 2026
+2666-9900/© 2026 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY-NC-ND license (http://creativecommons.org/licenses/bync-nd/4.0/).
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+N95 components that reflect macular and inner retinal function,
+respectively [12,13]. Recordings are typically obtained following
+ISCEV-recommended protocols, though the signals remain susceptible to
+noise arising from eye movements, fixation instability, and electro­
+physiological interference [14–16].
+Recent advances in signal processing and machine learning have
+significantly enhanced the analytical potential of PERG signals. Tech­
+niques such as multi-wavelet transformations and data-driven feature
+extraction have been shown to improve noise suppression and signal
+characterization in electrophysiological recordings [4,17]. For example,
+wavelet-based approaches using Ricker, Gaussian, and Morlet functions
+have achieved high classification accuracy by capturing complementary
+temporal–spectral characteristics of ERG signals [18]. These de­
+velopments have facilitated improved detection of pathological patterns
+across a wide range of retinal and optic nerve disorders, including
+glaucoma, retinitis pigmentosa, and less common inflammatory and
+ischemic conditions [4].
+Beyond ophthalmology, structured signal decomposition and
+feature-engineering frameworks have proven effective across multiple
+understanding biomedical domains. Empirical Wavelet Transform
+(EWT), Fourier–Bessel series expansion, and multivariate decomposition
+techniques have been successfully applied to electrocardiographic
+(ECG), electroencephalographic (EEG), and pulmonary sound signals for
+automated disease detection, including myocardial infarction, bundle
+branch block, epilepsy, and respiratory disorders [19–21]. These studies
+demonstrate that physiologically motivated band-wise decomposition,
+followed by interpretable feature extraction, can yield robust and clin­
+ically meaningful diagnostic models. Similar wavelet-based approaches
+have also been applied to ophthalmic imaging, such as automated
+glaucoma detection from fundus images, highlighting the broad appli­
+cability of multiscale signal analysis in biomedical diagnostics [22].
+Pattern electroretinography (PERG) has consequently emerged as a
+critical tool for assessing macular and retinal ganglion cell function,
+particularly in distinguishing macular diseases from optic nerve disor­
+ders [23,24]. Recent advancements in signal processing and machine
+learning (ML) have expanded its diagnostic potential. For instance,
+Canedo et al. proposed novel modeling approaches for PERG signal
+analysis, leveraging wavelet transforms and time-frequency decompo­
+sition to enhance feature extraction for retinal pathology detection [25].
+Similarly, studies such as Asanad and Karanjia emphasize PERG's clin­
+ical applicability in diagnosing conditions such as glaucoma and
+inherited maculopathies [23], while Holder et al. linked PERG abnor­
+malities to fundus autofluorescence patterns in macular dystrophies
+[24]. The ISCEV standards (Bach et al., 2013) provide a standard pro­
+cedure for consistent PERG acquisition, though gaps remain in trans­
+lating these protocols into automated, multi-disease classification
+systems [15,26].
+Despite these advances, most existing machine learning studies focus
+on binary classification tasks (e.g., glaucoma versus healthy controls)
+using ERG or OCT data, with relatively limited attention given to PERGbased multi-pathology classification [27]. Moreover, while
+wavelet-based and spectral features have demonstrated promise in ERG
+analysis, systematic evaluation of band-limited PERG signals for dis­
+tinguishing diverse retinal and optic nerve disorders remains underex­
+plored [28,29]. While prior studies have applied machine learning to
+diagnose individual retinal diseases, the majority rely on binary classi­
+fication paradigms and limited datasets [30], To address these limita­
+tions, this study utilizes the IOBA-PERG dataset that contains a
+comprehensive repository of 1354 transient pattern electroretinography
+(PERG) responses, to address broader diagnostic challenges through two
+key approaches [4]. Advanced signal processing techniques are applied
+to analyze waveform morphology, focusing on features such as
+N35–P50–N95 latencies, oscillatory potentials, and spectral character­
+istics. Drawing from established EEG signal processing method­
+ologies—where frequency band segregation and band-pass filtering
+(0.5–100 Hz) have enabled robust feature extraction [31], this study
+
+adopts a band limited PERG analysis framework to enhance interpret­
+ability. The PERG signals are segmented into five physiologically
+motivated frequency bands:
+1. Very-low (0–1 Hz): Captures slow oscillatory components associated
+with metabolic retinal processes
+2. Low (1–5 Hz): Isolates the N95 wave, indicative of inner retinal
+dysfunction
+3. Mid (5–15 Hz): Emphasizes the P50 wave, representing macular
+function
+4. High (15–30 Hz): Associated with transient glaucomatous responses
+5. Very-high (30–50 Hz): May encode high-frequency oscillations in
+ischemic retinopathies
+Unlike prior ERG and PERG studies that primarily apply spectral
+filtering as a preprocessing step or focus on isolated disease detection,
+the present work introduces a structured, band-wise diagnostic frame­
+work in which frequency-specific PERG components are independently
+analyzed, statistically validated, and systematically compared across
+multiple retinal and optic nerve disorders. The novelty therefore lies not
+in the use of standard band-pass filters, but in the diagnostic interpre­
+tation and comparative evaluation of band-limited PERG features across
+diverse pathologies.
+Second, multi-class classification models are developed to distin­
+guish among 15 retinal pathologies using time-domain features derived
+from band-limited PERG signals. The primary objective is to establish a
+machine learning–driven framework that incorporates frequencyoptimized PERG features for the diagnosis of retinal disorders,
+including early-stage glaucoma, diabetic macular edema, and retinitis
+pigmentosa. By systematically evaluating the diagnostic relevance of
+predefined frequency bands, this study aims to address existing gaps in
+PERG-based classification and to highlight the advantages of frequencyadaptive filtering over conventional time-domain analysis.
+Although existing literature confirms the clinical relevance of PERG
+signals for assessing retinal function, significant gaps remain in their
+analytical use for automated classification and early detection. In
+particular, frequency-domain analysis of PERG signals has received
+limited attention in machine learning–based ophthalmic diagnostics.
+This work addresses this gap by investigating the diagnostic value of
+PERG frequency components using an ML architecture trained on the
+open-access IOBA-PERG dataset from PhysioNet. The proposed frame­
+work, illustrated in Fig. 1, analyzes multi-pathology PERG responses,
+with implementation details and results presented in the subsequent
+sections.
+2. Methodology
+This section outlines the complete methodology adopted in this
+study, including signal preprocessing, band segmentation, feature
+extraction, and the feature validation. Each process is described in detail
+in the following subsections.
+2.1. Dataset description
+In this research, the publicly available IOBA-PERG dataset from
+PhysioNet [4] have been used, which comprises 1,354 transient pattern
+electroretinogram (PERG) responses recorded from 304 individuals,
+encompassing a total of 336 independent session records. Each record
+contains bilateral retinal signals sampled at a rate of 170 Hz, alongside
+extensive clinical metadata including age, sex, and multiple diagnostic
+labels (diagnosis1, diagnosis2, diagnosis3). In this analysis, only the
+primary diagnostic field (diagnosis1) was used to define the ground
+truth labels for supervised multi-class classification system.
+Although the complete dataset includes a broad range of retinal and
+optic nerve pathologies, a curated subset consisting of 15 clinically
+significant disease categories, including healthy controls, have been
+2
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Fig. 1. Block diagram of the proposed classification of retinal pathologies using ML algorithms.
+
+chosen. This selection was primarily motivated by the need to balance
+class representation and mitigate the adverse effects of sample size
+disparities. Categories with fewer than five recordings were excluded to
+prevent data imbalance, which can compromise classifier performance.
+Future work will aim to extend the analysis to include underrepresented
+classes once the present methodology has been validated.
+The final dataset used for classification included 280 records, strat­
+ified across 15 diagnostic categories. Table 1 presents a summary of the
+most prevalent pathologies retained for analysis, along with brief clin­
+ical descriptions.
+
+2.2. Preprocessing of PERG signals
+All PERG recordings were initially subjected to preprocessing to
+enhance signal quality and minimize noise. The signals, acquired at 170
+Hz, capture the dynamic activity of retinal cells within the relevant
+electrophysiological frequency range (0.5–50 Hz). Each session pro­
+vided both left and right eye recordings. The raw signals were depicted
+in Figs. 2 and 3, represents a sample normal PERG signal and Macular
+Dystrophy signal accordingly.
+In addition, raw signals were filtered using a fourth-order zero-phase
+Butterworth bandpass filter (0.5–50 Hz) as shown in Eq. (1). This choice
+was guided by standard electrophysiological analysis practices [2],
+effectively suppressing baseline drift and high-frequency electrical ar­
+tifacts without distorting phase information. The zero-phase imple­
+mentation provide that temporal relationships between signal
+components are preserved [32]. This is applied separately to left and
+right eye signals.
+
+Table 1
+Summary of selected diagnoses from the IOBA-PERG dataset.
+Sl.
+No.
+
+Name of the Disease
+
+No. of
+Records
+
+Explanation
+
+xfilt (t) = filtfilt(b, a, x(t))
+
+1
+
+Normal
+
+106
+
+where,
+
+2
+
+Retinitis Pigmentosa
+
+47
+
+3
+
+Macular Dystrophy
+
+33
+
+4
+
+Stargardt Disease
+
+16
+
+5
+
+Cone-Rod Dystrophy
+
+14
+
+6
+
+Birdshot
+Chorioretinopathy
+Inherited Optic Atrophy
+
+12
+
+8
+
+9
+
+Congenital Stationary
+Night Blindness
+Retinal Toxicity
+
+10–15
+
+Other Rare Disorders†
+
+27
+
+​
+
+Total
+
+280
+
+No clinical signs of retinal
+dysfunction.
+Genetic retinal dystrophy
+affecting photoreceptor
+response.
+Degenerative or inherited
+disorder of the macula.
+Juvenile macular degeneration
+caused by ABCA4 mutations.
+Affects cone and rod
+photoreceptors, leading to
+progressive vision loss.
+Rare bilateral posterior uveitis
+characterized by creamy lesions.
+Genetically mediated
+degeneration of retinal ganglion
+cells.
+Non-progressive dysfunction of
+rod photoreceptors.
+Damage induced by systemic or
+intravitreal medications.
+Autoimmune retinopathy,
+ischemia, achromatopsia, etc.
+​
+
+7
+8
+
+10
+
+7
+
+(1)
+
+(b, a) = Butterworth(4, [f L , f H ])
+fL and fH are the normalized low and high cutoff frequencies
+Post-filtering, spectral content was examined through Fast Fourier
+Transform (FFT) to assess signal quality and identify dominant fre­
+quency components [33]. This preprocessing step served both to denoise
+the data and to prepare it for subsequent band-specific decomposition
+and feature extraction. Fig. 4 presents a sample raw PERG signal, filtered
+and with FFT applied, the frequency components in the 0–50 Hz range.
+2.3. Frequency band decomposition
+While band-pass filtering and spectral analysis have been previously
+applied to ERG and PERG signals, most existing studies employ these
+techniques primarily for noise suppression or for single-disease char­
+acterization. In contrast, this study uses frequency band decomposition
+as a diagnostic analysis framework, in which each band is analyzed
+independently to examine its relative contribution to disease discrimi­
+nation. This structured band-wise analysis enables systematic compari­
+son of feature relevance across multiple retinal and optic nerve
+disorders, rather than treating spectral filtering solely as a preprocessing
+
+Other Rare disorders: autoimmune retinopathy, orbital ischemia, X-linked
+retinoschisis, central serous chorioretinopathy, congenital achromatopsia, and
+paracentral acute middle maculopathy
+†
+
+3
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Fig. 2. Raw PERG signal (normal subject).
+
+Fig. 3. Raw PERG signal (macular dystrophy).
+
+step.
+Subsequently, to isolate physiologically meaningful signal compo­
+nents, the filtered PERG signals were decomposed into five distinct
+frequency bands, each reflecting different retinal or neurophysiological
+phenomena [28]. Table 2 list the proposed frequency band limits along
+with their functional relevance. For each eye signal xt , following
+bandpass filtering, the frequency spectrum and corresponding band
+segmentation were extracted as described in Eq. (2 and 3).
+
+⃒ {
+}⃒
+Fs
+X(f) = ⃒F xfilt (t) ⃒, f = 0, 1, 1...,
+2
+where,
+• X(f) is
+of the Fast Fourier transform (FFT)
+]
+[ the magnitude
+• Bi = fi, low , fi,high is a defined frequency band (e.g., 1–5 Hz)
+
+4
+
+(2)
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Fig. 4. Frequency Spectrum of a raw PERG signal (0–50 Hz).
+Table 2
+Frequency Band Range (Hz) - Functional Relevance.
+Band
+
+Frequency
+Range (Hz)
+
+Bi
+
+Band
+name
+
+fi,low
+
+fi,high
+
+1.
+2.
+
+Very low
+Low
+
+0
+1
+
+1
+5
+
+3.
+4.
+5.
+
+Mid
+High
+Very high
+
+5
+15
+30
+
+15
+30
+50
+
+Interpretation
+
+Baseline fluctuations, non-neural drift
+Principal PERG components (e.g., N35, P50,
+N95)
+Flicker responses, ganglion cell activity
+Oscillatory potentials, secondary components
+Noise-prone region, possible residual
+oscillations
+
+For each band Bi , extract:
+Xi = {X(f )|f ∈ Bi }
+
+Fig. 5. Frequency plot - (0 to 1 Hz) Right and Left eye.
+
+(3)
+
+Frequency spectra were analyzed for both eyes independently, and
+magnitude responses were retained for subsequent feature extraction.
+Figs. 5–9: depicts the Band-specific frequency plots for both eyes.
+This band-based separation enables detailed feature analysis across
+different physiological domains.
+2.4. Statistical feature extraction from band-limited PERG signals
+Following frequency band decomposition, a set of statistical features
+was extracted independently from each selected frequency band and for
+each eye. Although these features are computed in the time domain,
+they are derived from band-limited PERG signals obtained through
+frequency-domain segmentation. This approach enables characteriza­
+tion of signal morphology and variability within physiologically mean­
+ingful frequency ranges while maintaining interpretability. For each
+frequency band and eye, a total of 11 scalar statistical features were
+
+Fig. 6. Frequency plot - (1 to 5 Hz) right and left eye.
+
+5
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+features will be presented in a subsequent study to expand the scope and
+diagnostic capabilities.
+For each subject, features were extracted separately from the left and
+right eye signals across the selected frequency bands B2 (1–5 Hz), B3
+(5–15 Hz), and B4 (15–30 Hz). The very-low-frequency band B1 (0–1 Hz)
+was excluded due to dominance of baseline drift and non-neural fluc­
+tuations, while the high-frequency band B5 (30–50 Hz) was omitted
+owing to susceptibility to noise and residual oscillatory artifacts. This
+resulted in 33 features per eye and a combined 66-dimensional feature
+vector per subject. Feature vectors from all subjects were aggregated
+into a dataset of size 280 × 66, where 280 denotes the total number of
+PERG recordings. The construction of the feature vectors for individual
+bands and eyes is formally described in Equations (4)–(10).
+Prior to classification, the extracted features were subjected to
+ANOVA-based post-hoc statistical evaluation, which is described in the
+subsequent subsection and was not used for feature selection or model
+training.
+
+Fig. 7. Frequency plot - (5 to 15 Hz) right and left eye.
+
+2.5. ANOVA-Based feature evaluation for PERG signal discrimination
+Analysis of Variance (ANOVA) was employed in this study exclu­
+sively as a post-hoc statistical analysis tool to support physiological
+interpretation of the extracted PERG features. Importantly, ANOVA was
+not used for feature selection, dimensionality reduction, or model
+optimization, and it did not influence the training or testing of the
+machine learning classifiers. All extracted features were retained and
+provided as input to the classification models.
+The primary objective of the ANOVA analysis was to assess the sta­
+tistical relevance of individual features in differentiating retinal pa­
+thology classes and to provide insight into which frequency bands and
+signal characteristics exhibit stronger group-level separation. One-way
+ANOVA is well suited for such exploratory analysis in multi-class
+biomedical datasets, as it compares between-class variance against
+within-class variance to quantify feature sensitivity across diagnostic
+categories.
+For each feature, the F-statistic was computed as:
+
+Fig. 8. Frequency plot - (15 to 30 Hz) right and left eye.
+
+F=
+
+Between − Group Variance
+Within − Group Variance
+
+Higher F-values indicate stronger statistical separation across pa­
+thology classes, while lower values suggest overlapping distributions.
+Corresponding p-values were calculated to assess statistical significance.
+For visualization purposes, p-values were transformed using the − log₁₀
+(p) scale to enhance interpretability of highly significant features.
+Statistical significance thresholds were interpreted as follows:
+• p< 0.05: Statistically significant discrimination
+• p< 0.001: Very strong discriminatory capability
+• p> 0.05: No statistically significant difference
+Fig. 9. Frequency plot - (30 to 50 Hz) right and left eye.
+
+Table 3 summarizes within-subject comparisons between left and
+right eyes. Figs. 10 and 11 illustrate the distribution and relative
+dominance of statistically significant features across frequency bands
+and eye regions.
+
+extracted, capturing amplitude distribution, signal energy, and temporal
+variation. These features were selected based on their widespread use in
+biomedical signal analysis and their relevance for characterizing elec­
+trophysiological waveforms [34,35].
+Table B.1 (Appendix B) summarizes the extracted features along with
+their mathematical definitions. While an initial exploratory analysis
+considered time-domain, frequency-domain, and time–frequency fea­
+tures, statistical features computed from band-limited signals demon­
+strated the most consistent and interpretable patterns across diagnostic
+classes. Consequently, the present study focuses on these features to
+establish a transparent and reproducible classification framework.
+Analysis involving additional frequency- and time–frequency-domain
+features is reserved for future work
+Additional analysis involving frequency and time-frequency domain
+
+2.5.1. Across-class ANOVA: identifying key PERG features by pathology
+Table B.2 (Appendix B) presents the PERG features ranked by oneway ANOVA p-values using pathology class as the grouping variable
+for comparing pathology classes, focusing on signals in the 1–5 Hz fre­
+quency band. From this analysis it can be observed that the features
+differ significantly across pathology types. The average F-value across all
+features was 1.61 ± 1.52, with a mean p-value of 0.49 ± 0.44 and
+-log10(p) of 1.64 ± 2.47. These results highlight that low-frequency
+features (1–5 Hz) dominate in distinguishing pathology classes.
+When selecting the top 20 features with p< 0.05, the values
+improved to F= 3.59 ± 1.22, p= 0 ± 0.01, and -log10(p)= 4.79 ± 2.37.
+6
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Table 3
+Ranking of PERG features by one-way ANOVA p-values using within-subject comparisons of mean values between left and right eyes.
+
+These features are visualized in Fig. 10, showing their strength in
+separating pathology classes.
+Among these, 14 features with p< 0.001 had even stronger separa­
+tion, with F= 4.2 ± 0.9, p= 0 ± 0, and − log₁₀(p) = 5.95 ± 1.79. All of
+these top-performing features were found in the 1–5 Hz range, con­
+firming that low-frequency components are the most informative for
+classifying retinal pathologies. These features are visualized in Fig. 11.
+Figs. A.1 to A.5 (Appendix A) illustrate box plots of the top five PERG
+features—such as slope, standard deviation (std), peak-to-peak ampli­
+tude, and root mean square (rms)—within the 1–5 Hz frequency band,
+predominantly derived from the right eye, across various retinal pa­
+thology classes. Despite the extremely low p-values (as small as 4.9 ×
+10⁻⁹) indicating strong statistical significance, the box plots exhibit
+notable distributional overlap among certain classes, particularly Class 6
+(Congenital Stationary Night Blindness), Class 10 (Cone-Rod Dystro­
+phy), Class 13 (Retinitis Pigmentosa), and Class 14 (Normal).
+This visual overlap suggests several underlying factors:
+
+1. Intra-class variability, where individuals within the same pathology
+class exhibit diverse retinal response characteristics due to biological
+heterogeneity or procedural influences.
+2. Feature redundancy, indicating that a single feature may not be
+sufficient to capture the complex and distinctive signal patterns
+associated with each pathology.
+Although the statistical analysis confirms the discriminative poten­
+tial of these features, their overlapping distributions underscore the
+limitations of relying on individual features for precise classification.
+This highlights the necessity of a multi-feature approach, wherein
+multiple complementary features collectively enhance the accuracy and
+robustness of classification models.
+Moreover, the observed overlap may be influenced by factors such as
+natural biological variation, minor differences in electrode placement,
+or variations in disease stage or progression. These findings emphasize
+the complexity inherent in interpreting PERG signals and reinforce the
+importance of a comprehensive and strategically selected feature set for
+clinical and diagnostic applications.
+7
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Fig. 10. Significant PERG features by frequency band (p< 0.05,− log10 (p) scaled).
+
+Fig. 11. Significant PERG Features by eye region (p< 0.001,− log10 (p) scaled).
+
+Fig. 12. Dominant PERG features across frequency bands (Features by − log10 (p)).
+8
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+2.5.2. Eye region comparison: left vs. right eye analysis
+Table 3 focuses on differences between the left and right eyes for
+each subject. This within-subject comparison helps identify eye-specific
+variations in PERG signals.
+Across all features, the mean F-value was 5.53 ± 6.29, p= 0.31 ±
+0.36, and − log₁₀(p) = 1.58 ± 1.58. However, among the 17 features
+with p< 0.05, values improved to F= 10.12 ± 5.62, p= 0.01 ± 0.01, and
+− log₁₀(p) = 2.79 ± 1.3.
+A subset of 10 highly significant features (p< 0.001) showed even
+greater differentiation between eyes, with F= 13.71 ± 4.62, p= 0 ± 0,
+and − log₁₀(p) = 3.62 ± 1.05. These are presented visually in Fig. 12:
+Dominant PERG Features Across Frequency Bands, with all top-ranked
+features located in the 15–30 Hz band, showing that higher-frequency
+signals are more sensitive to left–right differences.
+The 10 features with p< 0.001 showed mean F-value 13.71 ± 4.62,
+p‑value 0 ± 0, and − log₁₀(p) 3.62 ± 1.05—strong lateral differentiation.
+Notably, the left eye’s mid- to high-frequency bands (5–15 Hz and
+15–30 Hz) presented the most pronounced left-right differences, with
+top features like peak-to-peak, skewness, and std (all in 15–30 Hz)
+achieving F-values >14 and − log₁₀(p) ≥3.8. These findings are sum­
+marized in Fig. 12, which maps the dominant PERG features across
+frequency bands using − log₁₀(p) scaling. From these analysis of domi­
+nant PERG features reveals a distinct pattern regarding the importance
+of frequency bands and eye regions in two types of evaluations: pa­
+thology classification and inter-eye (left vs. right) comparison.
+For pathology classification, which evaluates how features vary
+across different retinal pathology classes, the top-ranked features (see
+Table B.2 in Appendix B) were consistently located in the 1–5 Hz fre­
+quency band. These include:
+
+were post-processed and used to model the classification system,
+including a description of the classification methodology and evaluation
+using relevant performance metrics.
+3. Machine learning models for retinal pathology classification
+Machine learning models were developed using feature sets extrac­
+ted from PERG signals recorded from both the left and right eyes of each
+subject. Time-domain features were derived from three predefined fre­
+quency bands (1–5 Hz, 5–15 Hz, and 15–30 Hz) independently for each
+eye, forming the input feature vectors for classification. For each subject,
+a total of 66 features were extracted and associated with a corresponding
+diagnostic class label. The resulting feature vectors were organized into
+a consolidated table structure, with each row representing a unique trial
+indexed by a generated SubjectID.
+The original dataset comprised 15 diagnostic classes (class num ∈ {1,
+…, 15}), each corresponding to a distinct retinal condition. To compre­
+hensively evaluate the classification capability of the extracted PERG
+features, three classification strategies were implemented:
+(i) binary classification to distinguish normal from pathological
+cases,
+(ii) multi-class classification using all 15 original labels, and
+(iii) five-class multi-class classification based on clinically motivated
+regrouping of related conditions.
+The five-class grouping consisted of Normal signals (106 records),
+Retinitis Pigmentosa (47 records), Macular Dystrophy (33 records),
+Stargardt Disease (16 records), and a consolidated category comprising
+related retinal and optic nerve disorders with overlapping PERG
+response characteristics. This regrouping was guided primarily by
+shared pathophysiological mechanisms and electrophysiological simi­
+larities observed in PERG recordings, with class imbalance considered as
+a secondary factor to support stable classifier training. All evaluations
+were performed using record-level random splits; subject-wise and
+cross-dataset validation were not applied and are reserved for future
+studies. The results corresponding to each classification strategy are
+presented and discussed in the subsequent sections.
+
+1. Slope, reflecting signal trend or direction
+2. Standard deviation (std), indicating variability
+3. Peak-to-peak, showing the signal’s amplitude range
+4. Root mean square (rms), quantifying energy
+These features were mostly derived from the right eye and demon­
+strated high F-values and extremely low p-values (p< 0.001), suggesting
+strong discriminatory power. This aligns with the physiological role of
+low-frequency PERG components, which are typically linked to retinal
+ganglion cell (RGC) response and sustained visual stimuli proc­
+essing—both of which may be altered in retinal pathologies.
+On the other hand, for left–right eye comparison (refer to Table B.2
+in Appendix B and Fig. 12), the most discriminative features were
+concentrated in the 15–30 Hz frequency band from the left eye. These
+features include:
+
+3.1. Data normalization
+Prior to training, all feature values were normalized using Min-Max
+scaling (range normalization) to provide uniformity in feature contri­
+bution and accelerate model convergence. Normalization was per­
+formed after class filtering but prior to data splitting, using MATLAB's
+normalize function with the 'range' method.
+
+1. Peak-to-peak
+2. Skewness and kurtosis, which describe the distribution shape and
+signal asymmetry
+3. Standard deviation, again reflecting variability
+
+3.2. Classification models
+A total of Five different machine learning classifiers were employed
+to evaluate the discriminative potential of the extracted features. This
+study evaluates five supervised machine learning classifiers for multi­
+class classification of PERG signals using a consistent experimental
+protocol. These classifiers were selected to represent a diverse set of
+learning paradigms, including multi layer neural networks, ensemble
+methods, and boosting techniques, allowing for a comprehensive
+assessment of model robustness and generalizability. A similar approach
+was adopted in prior work by Narasimhan, G., & Victor, A. (2025) [36],
+which conducted an empirical analysis of heart disease prediction using
+various datasets and classification procedures, reinforcing the value of
+comparative evaluation in clinical signal-based classification tasks.
+Although deep and hybrid learning approaches are increasingly popular
+in biomedical signal analysis, this study deliberately focuses on classical
+machine learning models. The primary reasons are the limited size of the
+available PERG dataset, the need for signal-level interpretability, and
+the requirement for clinical transparency. Classical models enable
+
+The high-frequency band (15–30 Hz) is generally associated with
+transient or rapid neural responses, possibly capturing subtle asymme­
+tries in retinal function or electrode placement that manifest differently
+between eyes. These features were particularly effective in identifying
+within-subject asymmetries, evidenced by high F-values (up to 20.45)
+and significant p-values (many < 0.001). These findings suggest that the
+low-frequency PERG features (1–5 Hz) are more sensitive to changes
+across pathology classes, supporting their suitability in multi-class
+classification system. High-frequency features (15–30 Hz) are more
+sensitive to eye-specific differences, making them valuable for detecting
+functional asymmetry in clinical evaluations.
+This dual-band strategy enhances both diagnostic specificity and
+clinical relevance, helping practitioners focus on the most informative
+PERG features depending on the diagnostic goal.
+The following section details how the statistically validated features
+9
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+explicit analysis of feature relevance, frequency-band contribution, and
+eye-specific effects, which are essential for physiological interpretation
+and clinical acceptance. In contrast, deep learning models typically
+require substantially larger datasets and often operate as black-box
+systems, limiting interpretability in early-stage exploratory studies. In
+this research the first model, a Multi Layer Neural Network (PatternNet),
+was configured with one hidden layer containing 15 neurons. The hid­
+den neuron were varied from 10 to 15 to visualize the stability of the
+system across the classification models and 15 neurons have been finally
+set. The training was performed using the Levenberg–Marquardt back­
+propagation algorithm (`trainlm`), with softmax output for multiclass
+prediction via one-hot encoding. Ensemble learning methods included
+Random Forest, implemented using MATLAB’s `TreeBagger` with 100
+trees and out-of-bag prediction, and Bagged Trees, constructed via `fit­
+censemble` with the method set to 'Bag'. To address class imbalance, the
+RUSBoost classifier was employed using `fitcensemble` with 100 deci­
+sion tree learners and random undersampling of majority classes during
+boosting. The final model, AdaBoost, utilized the Error-Correcting
+Output Codes (ECOC) framework with decision trees (maximum split
+of 20) as base learners and a one-vs-all coding scheme, implemented
+through MATLAB’s `fitcecoc`.
+All classifiers were trained and evaluated across 10 independent
+trials, with data partitioned using an 80–20 train-test split via MATLAB’s
+`cvpartition`. Performance was assessed using standard classification
+metrics: accuracy, precision, recall, specificity, F1-score, training time,
+and model complexity, where complexity was measured based on
+trainable parameters, number of learners, or ECOC structure depending
+on the model. Additionally, interpretability was qualitatively labeled for
+each classifier. Confusion matrices for each trial were saved in both
+graphical and CSV formats to enable class-specific error analysis. This
+structured setup supports a rigorous comparative study of neural and
+ensemble classifiers, offering insights into their relative performance,
+generalization ability, and suitability for PERG-based multiclass diag­
+nostic tasks.
+
+Network with Levenberg–Marquardt training), Random Forest, Bagged
+Trees, RUSBoost, and AdaBoost. Table 4 summarizes the performance
+metrics used in this study, namely accuracy, precision, recall, specificity,
+F1-score, and training time.
+Overall, most classifiers demonstrated strong performance in the
+binary classification setting, with NN-LM, Random Forest, Bagged Trees,
+and AdaBoost consistently achieving very high classification accuracy
+and low variability across trials. Similarly, NN-LM reported 99.82 % ±
+0.56 accuracy and 99.82 % ± 0.57 F1-score, indicating both excellent
+performance and stability. The stability observed across repeated eval­
+uations indicates that the extracted band-limited PERG features are
+highly effective in separating normal and pathological responses in this
+simplified diagnostic scenario.
+In contrast, RUSBoost underperformed significantly, achieving only
+63.39 % ± 7.11 accuracy, with a precision of 31.70 % ± 3.55 and an F1score of 38.69 % ± 2.84. The poor performance of RUSBoost may be
+attributed to its reliance on random undersampling, which can remove
+informative samples from already limited minority classes, thereby
+reducing learning capacity and increasing performance variability.
+The strong performance observed in the binary classification task can
+be partly attributed to the clear functional separation between normal
+and pathological PERG signals. While encouraging, this task represents a
+relatively less complex diagnostic problem, motivating further evalua­
+tion under more challenging multiclass conditions to better assess
+feature generalization and model robustness.
+4.2. Multiclass classification: 15-category retinal pathology model
+The fifteen-class classification task represents a significantly more
+challenging scenario due to severe class imbalance and limited samples
+in several categories, as shown in Table 5. Performance results for this
+task are presented in Table 6.
+Based on the results, the highest classification accuracy was 89.29 %,
+achieved using the AdaBoost classifier. The associated performance
+metrics included a precision of 67.52 ± 6.18, recall of 68.83 ± 6.58,
+specificity of 99.23 ± 0.35, F1-score of 68.14 ± 6.20, and a training time
+of 0.13 ± 0.08 s. Across classifiers, performance declined compared to
+the binary setting, reflecting the increased difficulty of distinguishing
+among multiple retinal pathologies with overlapping electrophysiolog­
+ical characteristics. Among the evaluated models, AdaBoost achieved
+the highest overall accuracy and comparatively stronger precision and
+recall, indicating better adaptability to class imbalance. However,
+reduced performance in other classifiers highlights the limitations
+imposed by sparse and uneven class distributions, including the pres­
+ence of classes with very few samples.
+These results underscore the challenges of fine-grained multiclass
+classification using limited PERG datasets and emphasize the need for
+either larger datasets or clinically meaningful class consolidation to
+improve stability and interpretability.
+
+4. Results and discussion
+The following section presents three sets of classification results
+derived from this study: binary classification distinguishing normal and
+pathological PERG responses, multiclass classification across fifteen
+distinct retinal pathologies, and a clinically consolidated five-class
+classification model. The results are analyzed to assess classifier
+behavior under increasing task complexity, followed by physiological
+and clinical interpretation of the observed feature and frequency-band
+relevance.
+4.1. Binary classification: normal vs. pathological
+A binary classification procedure have been implemented to classify
+between normal and pathological PERG responses. Five different clas­
+sifiers were used for the evaluation: MLNN-LM (Multi Layer Neural
+
+Table 4
+Performance comparison of five classifiers for binary retinal pathology classification (normal vs. pathological).
+
+10
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+S.K. Nataraj
+
+Table 5
+Class distribution of retinal pathologies by count and percentage.
+Class
+
+Count
+
+Percent (%)
+
+Class
+
+Count
+
+Percent (%)
+
+Class
+
+Count
+
+Percent (%)
+
+1
+2
+3
+4
+5
+
+5
+16
+5
+5
+3
+
+1.79
+5.71
+1.79
+1.79
+1.07
+
+6
+7
+8
+9
+10
+
+7
+8
+8
+10
+12
+
+2.50
+2.86
+2.86
+3.57
+4.29
+
+11
+12
+13
+14
+15
+
+14
+33
+47
+106
+1
+
+5.00
+11.79
+16.79
+37.86
+0.36
+
+Table 6
+Performance comparison of five classifiers for 15-class retinal pathology classification.
+
+4.3. Multiclass classification: five-category retinal pathology model
+
+0.29 ± 0.02 s, with a fixed model complexity. Overall, the classifier
+performed reasonably well but showed sensitivity to data imbalance and
+class variation.
+The Table 10 presents results from 10 trials using the Bagged Trees
+(Bootstrap Aggregation) model for five-class classification. Performance
+metrics are expressed as percentages. The model showed consistent ac­
+curacy, ranging from 87.50 % to 94.64 %, with an average of 91.61 % ±
+2.67, indicating good stability. Precision and recall averaged 68.72 % ±
+9.28 and 67.76 % ± 5.87, respectively, suggesting moderate ability to
+detect positive instances with some variation across trials. The F1-score
+averaged 68.16 % ± 7.4, reflecting reasonable balance between preci­
+sion and recall. Specificity remained high at 98.24 % ± 0.54, confirming
+consistent recognition of negative cases. Training times were efficient,
+averaging 0.68 ± 0.06 s, with constant model complexity. Overall, the
+classifier performed reliably, offering a balanced trade-off between ac­
+curacy and computational cost.
+Table 11 shows the results of 10 trials using the RUSBoost classifier
+for five-class classification. Compared to other models, RUSBoost
+delivered substantially lower performance, with an average accuracy of
+36.25 % ± 7.53. Precision and recall were also low, averaging 19.05 %
+± 10.12 and 21.16 % ± 5.17, respectively, reflecting poor identification
+of true positives. The F1-score averaged 19.27 % ± 8.43, indicating
+weak overall classification quality.
+Although specificity remained relatively stable at 85.87 % ± 2.29,
+this reflects the model’s tendency to favor the majority (negative)
+classes. Training time averaged 0.37 ± 0.24 s, with model complexity
+fluctuating (average 70 ± 48.3). These results suggest that RUSBoost
+struggled with the dataset, likely due to severe class imbalance and
+insufficient representative samples for minority classes.
+Table 12 summarizes the performance of the AdaBoost classifier
+implemented via the ECOC (Error-Correcting Output Codes) framework.
+The model showed exceptionally high and consistent results, achieving
+an average accuracy of 99.11 % ± 1.26 across 10 trials. Precision, recall,
+and F1-score were all highly stable, averaging 82.92 % ± 0.59, 83.15 %
+± 0.59, and 83.03 % ± 0.55, respectively. Specificity was nearly perfect
+at 99.77 % ± 0.32, indicating excellent identification of negative cases.
+Training time remained minimal (0.05 ± 0.01 s) and model complexity
+low (5.7 ± 0.48), highlighting the efficiency of this approach. Overall,
+AdaBoost-ECOC delivered the best balance of performance, consistency,
+and computational efficiency among all classifiers tested.
+Table 13 presents a comparative analysis of five classification models
+
+To improve clinical relevance and address class imbalance, the
+original fifteen pathology labels were consolidated into five broader
+diagnostic categories. The resulting class distribution is shown in
+Table 7, and classifier performance is summarized in Tables 8–13.
+Table 8 presents the results of 10 trials using the Multilayer Neural
+Network with Levenberg–Marquardt (MLNN-LM) algorithm for fiveclass classification. All metrics—accuracy, precision, recall, specificity,
+and F1-score—are reported in percentage terms. The model achieved
+high performance, with perfect scores in Trials 1, 7, and 9. An average
+accuracy of 96.43 % ± 3.04 indicates strong predictive ability and
+reasonable stability. However, higher variability in precision (±9.56 %)
+and recall (±8.79 %), especially in Trial 6, points to challenges with
+class imbalance. The average F1-score of 93.12 % ± 8.85 reflects a good
+balance between precision and recall. Training time ranged from 3.43 to
+7.58 s, averaging 4.61 ± 1.19 s. Overall, the classifier is effective but
+sensitive to class distribution, suggesting the need for data balancing in
+future work.
+Table 9 summarizes the performance of the Random Forest (Tree
+Bagger) model across 10 trials for the five-class classification task. All
+evaluation metrics are expressed in percentages.
+The model achieved a maximum accuracy of 96.43 % and a mini­
+mum of 76.79 %, with an average of 89.46 % ± 5.8, indicating moderate
+classification performance with some variability. Precision and recall
+showed noticeable fluctuations (65.86 % ± 8.94 and 64.61 % ± 7.41,
+respectively), highlighting occasional difficulty in consistently identi­
+fying positive cases. The F1-score averaged 65.13 % ± 7.77, reflecting
+modest balance between precision and recall. Specificity remained high
+and consistent at 97.82 % ± 1.21, confirming reliable identification of
+negative instances. Training time was efficient and consistent, averaging
+Table 7
+Retinal pathology class distribution after merging:.
+Value
+
+Count
+
+Percent (%)
+
+1
+2
+3
+4
+5
+
+78
+16
+33
+47
+106
+
+27.86
+5.71
+11.79
+16.79
+37.86
+
+11
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Table 8
+Performance evaluation of retinal pathoalogy classification using multi layer neural.
+
+Table 9
+Performance evaluation of retinal pathoalogy classification using random forest.
+
+Table 10
+Performance evaluation of retinal pathoalogy classification using bagged trees (bootstrap aggregation).
+
+evaluated over 10 independent trials using key performance metrics:
+accuracy, precision, recall, specificity, F1-score, and training time.
+
+1. The AdaBoost (ECOC) model outperformed all other classifiers,
+achieving the highest average accuracy (99.11 % ± 1.26) and
+12
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Table 11
+Performance evaluation of retinal pathoalogy classification using RUS Boost.
+
+Table 12
+Performance evaluation of retinal pathoalogy classification using AdaBoost (via ECOC framework).
+
+Table 13
+Performance comparison of five classifiers for 5-class retinal pathology classification (grouped diagnostic categories).
+
+exceptional consistency across all metrics. Its precision, recall, and
+F1-score remained tightly clustered around 83 %, with minimal
+variability, while requiring the least training time (0.05 ± 0.01 s)
+and low model complexity, making it both highly effective and
+computationally efficient.
+2. The Neural Network with Levenberg–Marquardt (NN-LM) also
+delivered strong performance, with an average accuracy of 96.43 %
+± 3.04 and the highest precision (94.87 % ± 9.56) among all models.
+However, its training time was significantly higher (4.61 ± 1.19 s),
+indicating greater computational cost.
+
+3. Bagged Trees provided a good balance, achieving 91.61 % ± 2.67
+accuracy with moderate precision and recall values around 68 %,
+and reasonable training efficiency. In contrast, Random Forest (Tree
+Bagger) showed slightly lower accuracy (89.46 % ± 5.80) and higher
+variability across precision and recall, reflecting less stable behavior
+across trials.
+4. The RUSBoost classifier, which incorporates random undersampling
+to address class imbalance, underperformed significantly in all
+metrics, with accuracy at 36.25 % ± 7.53 and an F1-score of just
+19.27 % ± 8.43. While the intention of addressing imbalance was
+13
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+valid, the aggressive undersampling likely led to information loss,
+reducing classification quality.
+Overall, AdaBoost via ECOC emerged as the most robust and efficient
+model, followed by NN-LM for accuracy-focused scenarios and Bagged
+Trees for balance between performance and training time. RUSBoost
+was not suitable in this context due to its consistently poor results.
+The confusion matrices of the AdaBoost and MLNN-LM classifiers
+corresponding to their lowest classification accuracy trials were
+analyzed to identify specific patterns of misclassification. These are
+presented in Fig. 13 and Fig. 14, respectively.
+From the AdaBoost confusion matrix, it is evident that the class
+formed by merging original classes 5–15 exhibited a misclassification
+rate of 11.1 %, corresponding to 2 incorrectly predicted samples. In the
+case of the MLNN-LM classifier, Class 2 (Retinitis Pigmentosa) showed a
+misclassification rate of 33.3 % (1 out of 3 samples), while Class 3
+(Macular Dystrophy) had a misclassification rate of 11.1 % (1 out of 9
+samples). These results highlight specific weaknesses in class-level pre­
+diction, particularly for classes with fewer training samples. Across all
+classifiers, the five-class configuration resulted in improved and more
+stable performance compared to the fifteen-class scenario. AdaBoost
+implemented via the ECOC framework consistently achieved the best
+balance of accuracy, precision, recall, and computational efficiency. The
+MLNN-LM classifier also demonstrated strong predictive capability but
+required higher training time, indicating increased computational cost.
+Ensemble-based models such as Bagged Trees and Random Forest
+offered moderate performance with reasonable stability, while RUS­
+Boost again underperformed, suggesting that aggressive undersampling
+is not well suited for this dataset. Confusion matrix analysis revealed
+that misclassifications were primarily concentrated in categories with
+fewer samples, reinforcing the influence of data imbalance on class-level
+performance.
+Beyond numerical performance, these results motivate a deeper ex­
+amination of why specific frequency bands and signal features
+contribute differently across pathology classes and eye regions. The
+following subsections provide physiological and clinical interpretations
+of these observations.
+
+Fig. 14. Confusion matrix of MLNN-LM with minimum accuracy of 91.07 %.
+
+such as slope, standard deviation, peak-to-peak amplitude, and RMS
+extracted from this band demonstrate greater sensitivity to diseaserelated functional changes. This explains why low-frequency band fea­
+tures consistently achieved higher statistical significance and stronger
+discriminative performance across pathology classes.
+4.5. Eye-Region and high-frequency feature interpretation
+In contrast, features derived from higher frequency bands (15–30
+Hz) were more effective in capturing left–right eye differences. Highfrequency PERG components are typically associated with transient
+neural responses and rapid signal fluctuations, which may be more
+susceptible to subtle asymmetries arising from disease progression,
+electrode placement, or inter-eye physiological variation. Features such
+as skewness, kurtosis, and peak-to-peak amplitude in this band were
+therefore more informative for within-subject comparisons rather than
+cross-pathology discrimination. This complementary behavior high­
+lights the importance of band-specific feature interpretation depending
+on the diagnostic objective.
+
+4.4. Interpretation of frequency band behavior across pathologies
+
+4.6. Clinical and methodological implications
+
+The observed dominance of low-frequency PERG components (1–5
+Hz) in pathology classification can be attributed to their strong associ­
+ation with sustained retinal ganglion cell (RGC) activity and macular
+processing. Pathologies such as glaucoma, retinitis pigmentosa, and
+macular dystrophies are known to alter slow, sustained neural responses
+rather than transient high-frequency activity. Consequently, features
+
+From a clinical perspective, these findings suggest that lowfrequency PERG features are more suitable for disease classification
+tasks, while higher-frequency components may serve as markers of
+functional asymmetry or disease staging. Methodologically, this re­
+inforces the value of the proposed band-wise analysis framework, which
+allows frequency-dependent insights that would be obscured in fullband or purely time-domain analysis.
+5. Conclusion
+This study investigated frequency-band–specific feature behavior in
+PERG signals for the classification of retinal and optic nerve pathologies.
+Beyond numerical performance comparisons, the findings provide
+insight into the physiological relevance of different spectral compo­
+nents. In particular, low-frequency PERG bands demonstrated stronger
+discriminative capability across pathology classes, which may be
+attributed to their association with global retinal ganglion cell responses
+and sustained neural activity. In contrast, higher-frequency features
+showed greater sensitivity to inter-eye variability, suggesting their po­
+tential role in capturing localized or asymmetrical functional changes.
+The structured band-wise analysis employed in this work enables
+systematic comparison of feature relevance across disorders, rather than
+treating spectral analysis solely as a preprocessing or noise-reduction
+step. By decomposing the PERG signal into diagnostically meaningful
+frequency bands and analyzing each band independently, the proposed
+framework facilitates clearer interpretation of how different spectral
+
+Fig. 13. Confusion matrix of AdaBoost via ECOC with minimum accuracy of
+96.43 %.
+14
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+components contribute to disease characterization. This approach
+complements existing PERG-based diagnostic studies and supports the
+potential of frequency-domain representations as informative bio­
+markers when combined with machine learning classifiers.
+Despite the promising results, several limitations of the present study
+should be acknowledged. First, this work represents an exploratory
+analysis conducted on a limited dataset, which may restrict the gener­
+alizability of the reported findings. Subject-wise and cross-dataset vali­
+dation were not performed, and therefore inter-subject variability and
+dataset bias could not be fully assessed. Second, the proposed framework
+relies on predefined frequency bands and handcrafted features, which,
+while interpretable, may not capture all relevant signal characteristics.
+Finally, detailed physiological component-level analysis of PERG
+waveforms (such as N35, P50, and N95) was beyond the scope of the
+current study.
+These limitations highlight the need for further validation using
+larger and more diverse datasets, as well as the exploration of optimized
+frequency-band selection and hybrid feature representations.
+
+PhysioNet and was developed by Fernández et al. [4]. The data can be
+accessed freely at: https://doi.org/10.13026/d24m-w054. The authors
+did not generate or modify the dataset. All preprocessing scripts and
+analytic code developed for this study are available from the corre­
+sponding author upon reasonable request.
+Funding
+The authors would like to declare that this project have no external
+funding.
+Declaration of generative AI and AI-assisted technologies in the
+writing process
+The author acknowledges the use of AI-assisted tools, specifically
+ChatGPT by OpenAI, to enhance the linguistic clarity, correct gram­
+matical errors, and improve the overall coherence of the manuscript. All
+scientific content, analysis, and conclusions presented are entirely the
+original work of the author. AI assistance was used solely for refining the
+language and presentation of the text. This usage aligns with the jour­
+nal’s policies on transparency and ethical authorship practices.
+
+Ethical statement for computer methods and programs in
+biomedicine
+Hereby, I /Sathees Kumar Nataraj/ consciously assure that for the
+manuscript / Empirical Analysis of Machine Learning Classifiers for
+Retinal and Optic Nerve Disorder Detection Using Band-Limited PERG
+Features/ the following is fulfilled:
+
+CRediT authorship contribution statement
+Sathees Kumar Nataraj: Writing – review & editing, Writing –
+original draft, Visualization, Validation, Methodology, Formal analysis.
+
+• the work described has not been published previously except in the
+form of a preprint, an abstract, a published lecture, academic thesis
+or registered report. See our policy on multiple, redundant or con­
+current publication.
+• the article is not under consideration for publication elsewhere.
+• the article's publication is approved by all authors and tacitly or
+explicitly by the responsible authorities where the work was carried
+out.
+• if accepted, the article will not be published elsewhere in the same
+form, in English or in any other language, including electronically,
+without the written consent of the copyright-holder.
+
+Declaration of competing interest
+The authors declare that they have no known competing financial
+interests or personal relationships that could have appeared to influence
+the work reported in this paper.
+Acknowledgements
+The author would like to acknowledge Fernández, I., Cuadrado
+Asensio, R., Larriba, Y., Rueda, C., and Coco-Martin, R. M. for providing
+access to the PERG-IOBA dataset, which was instrumental in conducting
+this research. The dataset is available through PhysioNet at https://doi.
+org/10.13026/d24m-w054.. The author(s) also acknowledge the use of
+MATLAB for signal processing and feature extraction, and OpenAI’s
+ChatGPT for editorial assistance in refining the manuscript. This
+research was conducted at the Department of Mechatronics Engineering,
+College of Engineering, University of Technology Bahrain (UTB). The
+author gratefully acknowledge the institutional support provided by the
+university and the research facilities available at the department.
+
+I agree with the above statements and declare that this submission
+follows the policies of Computer Methods and Programs in Biomedicine
+Update as outlined in the Guide for Authors and in the Ethics in
+publishing.
+Ethics statement
+The dataset used in this study, PERG-IOBA, is publicly available on
+
+Appendix A
+Fig. A1,A2,A3,A4,A5
+
+15
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Fig. A.1. Box plot of right eye PERG slope (1–5 Hz) across pathology classes (p< 4.9 × 10⁻9).
+
+Fig. A.2. Box plot of right eye PERG std (1–5 Hz) across pathology classes (p< 1.7 × 10⁻⁸).
+
+Fig. A.3. Box plot of right eye PERG slope (1–5 Hz) across pathology classes (p< 2.1 × 10⁻⁸).
+16
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Fig. A.4. Box plot of right eye PERG peak2peak (1–5 Hz) across pathology classes (p< 2.1 × 10⁻⁸).
+
+Fig. A.5. Box plot of right eye PERG rms (1–5 Hz) across pathology classes (p< 9.1 × 10⁻⁸).
+
+Appendix B
+
+Table B.1
+Statistical features extracted from band-limited PERG signals.
+Sl. No.
+
+Feature
+
+Mathematical model
+
+Description
+
+1
+
+Mean
+
+Average signal amplitude
+
+2
+
+Variance
+
+1 ∑N
+μ =
+X [k]
+k=1 i
+N
+1 ∑N
+2
+σ =
+(Xi [k] − μ)2
+k=1
+√N̅̅̅̅̅
+2
+σ = σ
+∑N
+fk ⋅xk
+μf = ∑k=1
+N
+k=1 xk
+)2
+∑N (
+⋅xk
+k=1 fk − μf
+frequency variance =
+∑N
+k=1 xk
+fk is the kth frequency bin
+xk is the spectral magnitude at fk
+μf is the spectral centroid
+
+3
+
+4
+
+Standard deviation
+
+Frequency variance
+
+Amplitude dispersion
+Signal variability
+
+Power-weighted variance of frequency components
+
+(continued on next page)
+
+17
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+Table B.1 (continued )
+Sl. No.
+
+Feature
+
+5
+
+Root Mean Square (RMS)
+
+6
+7
+8
+9
+
+Peak-to-Peak
+Skewness
+Kurtosis
+Slope
+
+10
+
+Mean Absolute Value
+
+11
+
+Area Under Curve (AUC)
+
+Mathematical model
+√̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+1∑
+(Xi [k])2
+N
+max (Xi ) − min (Xi )
+skew (Xi )
+kurt (Xi )
+1 ∑N− 1
+mean(ΔXi) =
+Δxk
+k=1
+N− 1
+Δxk = xk+1 − xk
+⃒
+1 ∑N ⃒⃒
+(Xi [k] − μ)2 ⃒
+k=1
+N
+fi,high
+∫
+X(f)df
+
+Description
+Signal energy
+Dynamic amplitude range
+Distribution asymmetry
+Distribution peakedness
+Mean first-order derivative
+Xi [k]
+Signal magnitude summary
+
+fi,low
+
+Table B.2
+Ranking of PERG features by one-way ANOVA p-values using voice pathology class as the grouping variable.
+
+References
+
+[8] R. Hamilton, et al., VEP estimation of visual acuity: a systematic review, Doc.
+Ophthalmol. 142 (2021) 25–74.
+[9] D.C. Hood, et al., ISCEV standard for clinical multifocal electroretinography
+(mfERG)(2011 edition), Doc. Ophthalmol. 124 (2012) 1–13.
+[10] D.A. Thompson, M. Bach, J.J. McAnany, M. Šuštar Habjan, S. Viswanathan, A.
+G. Robson, ISCEV standard for clinical pattern electroretinography (2024 update),
+Doc. Ophthalmol. 148 (2) (2024) 75–85.
+[11] A.B. Suttle, et al., Assessment of the drug interaction potential and single-and
+repeat-dose pharmacokinetics of the BRAF inhibitor dabrafenib, J. Clin.
+Pharmacol. 55 (4) (2015) 392–400.
+[12] G.A. Omura, Progress in gynecologic cancer research: the Gynecologic Oncology
+Group experience, Semin. Oncol. 35 (5) (2008) 507–521.
+[13] V. Parisi, Electrophysiological assessment of glaucomatous visual dysfunction
+during treatment with cytidine-5′-diphosphocholine (citicoline): a study of 8 years
+of follow-up, Doc. Ophthalmol. 110 (2005) 91–102.
+[14] G.E. Holder, Pattern electroretinography (PERG) and an integrated approach to
+visual pathway diagnosis, Prog. Retin. Eye Res. 20 (4) (2001) 531–561.
+
+[1] Z. Zhang, et al., A survey on computer aided diagnosis for ocular diseases, BMC
+Med. Inform. Decis. Mak. 14 (2014) 1–29.
+[2] S. Muchuchuti, S. Viriri, Retinal disease detection using deep learning techniques: a
+comprehensive review, J. Imaging 9 (4) (2023) 84.
+[3] H.P.N. Scholl, E. Zrenner, Electrophysiology in the investigation of acquired retinal
+disorders, Surv. Ophthalmol. 45 (1) (2000) 29–47.
+[4] I. Fernández, R. Cuadrado-Asensio, Y. Larriba, C. Rueda, R.M. Coco-Martín,
+A comprehensive dataset of pattern electroretinograms for ocular
+electrophysiology research, Sci. Data 11 (1) (2024) 1013.
+[5] J.V. Odom, et al., ISCEV standard for clinical visual evoked potentials (2009
+update), Doc. Ophthalmol. 120 (2010) 111–119.
+[6] D.L. McCulloch, et al., ISCEV Standard for full-field clinical electroretinography
+(2015 update), Doc. Ophthalmol. 130 (1) (2015) 1–12.
+[7] S.K.S.K. Nataraj, et al., Statistical cross-correlation band features based thought
+controlled communication system, AI Commun 8 (4) (2016) 20–28, https://doi.
+org/10.3233/AIC-160703.
+
+18
+
+S.K. Nataraj
+
+Computer Methods and Programs in Biomedicine Update 9 (2026) 100236
+
+[15] M. Bach, M.B. Hoffmann, Update on the pattern electroretinogram in glaucoma,
+Optom. Vis. Sci. 85 (6) (2008) 386–395.
+[16] A.G. Robson, et al., ISCEV Standard for full-field clinical electroretinography (2022
+update), Doc. Ophthalmol. 144 (3) (2022) 165–177.
+[17] A.L. Goldberger, et al., PhysioBank, PhysioToolkit, and PhysioNet: components of a
+new research resource for complex physiologic signals, Circulation 101 (23) (2000)
+e215–e220.
+[18] M. Kulyabin, A. Zhdanov, A. Dolganov, M. Ronkin, V. Borisov, A. Maier, Enhancing
+electroretinogram classification with multi-wavelet analysis and visual
+transformer, Sensors 23 (21) (2023) 8727.
+[19] S.I. Khan, R.B. Pachori, Automated posterior myocardial infarction detection from
+vectorcardiogram and derived vectorcardiogram signals using MVFBSE-EWT
+method, Digit. Signal Process. 163 (2025) 105244.
+[20] S.I. Khan, R.B. Pachori, Empirical wavelet transform-based framework for
+diagnosis of epilepsy using EEG signals. AI-enabled Smart Healthcare Using
+Biomedical Signals, IGI Global Scientific Publishing, 2022, pp. 217–239.
+[21] S.I. Khan, R.B. Pachori, Automated Bundle Branch Block Detection Using
+Multivariate Fourier–Bessel Series Expansion-Based Empirical Wavelet Transform,
+IEEE Trans. Artif. Intell. 5 (11) (2024) 5643–5654.
+[22] S.I. Khan, S.B. Choubey, A. Choubey, A. Bhatt, P.V. Naishadhkumar, M.M. Basha,
+Automated glaucoma detection from fundus images using wavelet-based denoising
+and machine learning, Concurr. Eng. 30 (1) (2022) 103–115.
+[23] S. Asanad, R. Karanjia, Multifocal electroretinogram. StatPearls [Internet],
+StatPearls Publishing, 2022.
+[24] G.E. Holder, A.G. Robson, C.R. Hogg, M. Kurz-Levin, N. Lois, A.C. Bird, Pattern
+ERG: clinical overview, and some observations on associated fundus
+autofluorescence imaging in inherited maculopathy, Doc. Ophthalmol. 106 (1)
+(2003) 17.
+[25] C. Canedo, I. Fernández, R.M. Coco, R. Cuadrado, C. Rueda, Novel modeling
+proposals for the analysis of pattern electroretinogram signals. Statistical Methods
+at the Forefront of Biomedical Advances, Springer, 2023, pp. 255–273.
+
+[26] P.A. Constable, M. Bach, L.J. Frishman, B.G. Jeffrey, A.G. Robson, I. S. for C. E. of
+V, ISCEV Standard for clinical electro-oculography (2017 update), Doc.
+Ophthalmol. 134 (2017) 1–9. http://www.iscev.org.
+[27] E.J. Ahn, Y.I. Shin, Y.K. Kim, J.W. Jeoung, K.H. Park, Hemifield-based analysis of
+pattern electroretinography in normal subjects and patients with preperimetric
+glaucoma, Sci. Rep. 14 (1) (2024) 5116.
+[28] M. Bach, et al., ISCEV standard for clinical pattern electroretinography (PERG):
+2012 update, Doc. Ophthalmol. 126 (2013) 1–7.
+[29] A. Aykut, B. Akgün, A.S. Sezenöz, M.O. Sevik, Ö. Şahin, Diagnosing retinal
+disorders with artificial intelligence: the role of large language models in
+interpreting pattern electroretinography data, J. Heal. Sci. Med. 7 (5) (2024)
+538–542.
+[30] M. Kulyabin et al., ‘Synthetic Electroretinogram Signal Generation Using
+Conditional Generative Adversarial Network for Enhancing Classification of
+Autism Spectrum Disorder’, arXiv Prepr. arXiv2407.08166, 2024.
+[31] S.K. Nataraj, F. Al-Turjman, A.H. Adom, R. Sitharthan, M. Rajesh, R. Kumar,
+Intelligent robotic chair with thought control and communication aid using higher
+order spectra band features, IEEE Sens. J. (2020).
+[32] O. Garćıa-Alarćon, S. Puga-Guzḿan, J. Moreno-Valenzuela, On parameter
+identification of the Furuta pendulum, Procedia Eng 35 (2012) 77–84.
+[33] T. Harčarik, J. Bocko, K. Masláková, Frequency analysis of acoustic signal using the
+Fast Fourier Transformation in MATLAB, Procedia Eng 48 (2012) 199–204.
+[34] P. Monsalve, et al., Next generation PERG method: expanding the response
+dynamic range and capturing response adaptation, Transl. Vis. Sci. Technol. 6 (3)
+(2017) 5.
+[35] E.D. Übeyli, Statistics over features: EEG signals analysis, Comput. Biol. Med. 39
+(8) (2009) 733–741.
+[36] G. Narasimhan, A. Victor, Empirical analysis of predicting heart disease using
+diverse datasets and classification procedures of machine learning, Ain Shams Eng.
+J. 16 (8) (2025) 103470.
+
+19
+
+
